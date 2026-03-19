@@ -26,6 +26,7 @@ Auth::routes();
 Route::get('/home', 'HomeController@index')->name('home');
 
 Route::get('/', [PosController::class, 'index'])->name('pos.index');
+Route::post('/scanning-barcode', [PosController::class, 'scanningBarcode'])->name('scanningBarcode');
 Route::post('/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
 
 // Inventory
@@ -37,4 +38,3 @@ Route::post('/inventory/{id}/restock', [InventoryController::class, 'restock'])-
 
 // Transactions
 Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
-

@@ -20,7 +20,7 @@
         <!-- Stats Bar -->
         <div class="stats-bar">
             <div class="stat-item">
-                <span class="stat-val" id="statTotal">{{ count($products) }}</span>
+                <span class="stat-val" id="statTotal">{{ $total }}</span>
                 <span class="stat-label">Total Items</span>
             </div>
 
@@ -33,7 +33,7 @@
 
             <div class="stat-item">
                 <span class="stat-val" id="statOut" style="color:var(--red)">
-                    {{ $out}}
+                    {{ $out }}
                 </span>
                 <span class="stat-label">Out of Stock</span>
             </div>
@@ -58,7 +58,7 @@
                         onchange="filterInventory(document.getElementById('invBarcodeSearch').value)">
                         <option value="">All Categories</option>
                         @foreach ($categories as $cat)
-                            <option value="{{ $cat }}">{{ $cat }}</option>
+                            <option value="{{ $cat->id }}">{{ $cat->category_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -78,13 +78,15 @@
                                 <th style="text-align:right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="inventoryBody">
-                            @forelse($products as $product)
-                                <tr data-barcode="{{ $product['barcode'] }}" data-name="{{ strtolower($product['name']) }}"
-                                    data-category="{{ $product['category'] }}" data-id="{{ $product['id'] }}">
+                        <tbody>
+                            @foreach ($products as $product)
+                                <tr>
                                     <td>
                                         <div style="display:flex;align-items:center;gap:12px;">
-                                            <div class="item-thumb">{{ $product['emoji'] }}</div>
+                                            <div class="item-thumb">
+                                                <img style="height: 20px; width:20px" src="{{ $product['images'] }}"
+                                                    alt="">
+                                            </div>
                                             <div>
                                                 <div
                                                     style="font-family:var(--font-display);font-weight:700;font-size:14px;">
@@ -96,7 +98,7 @@
                                         </div>
                                     </td>
                                     <td><span class="barcode-display">{{ $product['barcode'] }}</span></td>
-                                    <td><span class="badge badge-blue">{{ $product['category'] }}</span></td>
+                                    <td><span class="badge badge-blue">{{ $product['category_name'] }}</span></td>
                                     <td style="font-family:var(--font-mono);color:var(--accent)">
                                         ₱{{ number_format($product['price'], 2) }}</td>
                                     <td style="font-family:var(--font-mono);color:var(--text-secondary)">
@@ -121,7 +123,7 @@
                                         <div style="display:flex;gap:6px;justify-content:flex-end;">
                                             <button class="btn btn-secondary btn-sm btn-icon"
                                                 onclick='openEditModal({{ json_encode($product) }})'
-                                                title="Edit">✏</button>
+                                                title="Edit">🖍</button>
                                             <button class="btn btn-secondary btn-sm btn-icon"
                                                 onclick="restockItem('{{ $product['id'] }}', '{{ $product['name'] }}')"
                                                 title="Restock">+</button>
@@ -130,16 +132,64 @@
                                         </div>
                                     </td>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8"
-                                        style="text-align:center;padding:48px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px;">
-                                        No inventory items. Use the form to add your first product.
-                                    </td>
-                                </tr>
-                            @endforelse
+                            @endforeach($products as $product)
+
                         </tbody>
                     </table>
+                    <div
+                        style="margin-top: 20px; display: flex; justify-content: end; gap: 8px; font-family: Arial, sans-serif;">
+                        <style>
+                            .pagination {
+                                display: flex;
+                                gap: 8px;
+                                list-style: none;
+                                padding: 0;
+                                margin: 0;
+                            }
+
+                            .pagination li {
+                                display: inline-block;
+                            }
+
+                            .pagination li a,
+                            .pagination li span {
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                min-width: 36px;
+                                height: 36px;
+                                padding: 0 6px;
+                                border-radius: 8px;
+                                background: white;
+                                border: 1px solid #e2e8f0;
+                                color: #4a5568;
+                                font-size: 14px;
+                                font-weight: 500;
+                                text-decoration: none;
+                                transition: all 0.2s ease;
+                            }
+
+                            .pagination li a:hover {
+                                background: #f7fafc;
+                                border-color: #cbd5e0;
+                                transform: translateY(-1px);
+                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                            }
+
+                            .pagination li.active span {
+                                background: #4299e1;
+                                border-color: #4299e1;
+                                color: white;
+                            }
+
+                            .pagination li.disabled span {
+                                background: #f7fafc;
+                                color: #cbd5e0;
+                                cursor: not-allowed;
+                            }
+                        </style>
+                        {{ $products->links() }}
+                    </div>
                 </div>
             </div>
 
@@ -179,9 +229,11 @@
                         <label class="form-label">Category</label>
                         <input type="text" class="form-control" id="fCategory" placeholder="e.g. Beverages"
                             list="categoryList">
+
                         <datalist id="categoryList">
                             @foreach ($categories as $cat)
-                                <option value="{{ $cat }}">
+                                <input type="hidden" id="fCategoryId" name="category_id" value="{{ $cat->id }}">
+                                <option data-id="{{ $cat->id }}" value="{{ $cat->category_name }}"></option>
                             @endforeach
                         </datalist>
                     </div>
@@ -195,19 +247,6 @@
                                 title="Generate">⊞</button>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Emoji Icon</label>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;" id="emojiPicker">
-                            @foreach (['🍎', '🥤', '🧃', '🍫', '🍪', '🧁', '🍕', '🍔', '🌮', '🍜', '☕', '🍺', '🧴', '🧹', '📦', '💊', '🎮', '📱', '👕', '🔧'] as $e)
-                                <button type="button" class="emoji-opt" onclick="selectEmoji('{{ $e }}')"
-                                    style="background:var(--bg-raised);border:1px solid var(--border);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:18px;transition:all 0.15s">{{ $e }}</button>
-                            @endforeach
-                        </div>
-                        <input type="text" class="form-control" id="fEmoji" placeholder="📦"
-                            style="font-size:20px;width:80px" value="📦">
-                    </div>
-
                     <div style="display:flex;gap:10px;margin-top:8px;">
                         <button type="button" class="btn btn-secondary" style="flex:1"
                             onclick="resetForm()">Reset</button>
@@ -296,11 +335,11 @@
         function openEditModal(product) {
             editingId = product.id;
             document.getElementById('itemId').value = product.id;
-            document.getElementById('fName').value = product.name;
+            document.getElementById('fName').value = product.product_name;
             document.getElementById('fPrice').value = product.price;
             document.getElementById('fCost').value = product.cost;
             document.getElementById('fStock').value = product.stock;
-            document.getElementById('fCategory').value = product.category;
+            document.getElementById('category_id').value = product.category;
             document.getElementById('fBarcode').value = product.barcode;
             document.getElementById('fEmoji').value = product.emoji;
             document.getElementById('formTitle').textContent = 'Edit Item';
@@ -333,9 +372,9 @@
                 price: parseFloat(document.getElementById('fPrice').value),
                 cost: parseFloat(document.getElementById('fCost').value) || 0,
                 stock: parseInt(document.getElementById('fStock').value),
-                category: document.getElementById('fCategory').value || 'General',
+                category_id: document.getElementById('fCategoryId').value || null, // use hidden input
                 barcode: document.getElementById('fBarcode').value,
-                emoji: document.getElementById('fEmoji').value || '📦',
+                image: '📦',
                 _token: document.querySelector('meta[name="csrf-token"]').content
             };
 
@@ -355,12 +394,25 @@
             }).then(r => r.json()).then(res => {
                 showToast(`✓ Item ${editingId ? 'updated' : 'added'} successfully`, 'success');
                 setTimeout(() => location.reload(), 800);
+                // clearInputs()
             }).catch(() => {
                 // Demo: reload with success message
                 showToast(`✓ Item ${editingId ? 'updated' : 'saved'}!`, 'success');
                 setTimeout(() => location.reload(), 800);
             });
         }
+
+        // function clearInputs() {
+        //     document.getElementById('fName').value = '';
+        //     document.getElementById('fPrice').value = '';
+        //     document.getElementById('fCost').value = '';
+        //     document.getElementById('fStock').value = '';
+        //     document.getElementById('fCategory').value = '';
+        //     document.getElementById('fCategoryId').value = ''; // hidden input for category ID
+        //     document.getElementById('fBarcode').value = '';
+        //     document.getElementById('fEmoji')?.value = '📦'; // optional default
+        //     document.getElementById('itemId').value = ''; // if editingId is stored here
+        // }
 
         // ===== DELETE =====
         function deleteItem(id) {

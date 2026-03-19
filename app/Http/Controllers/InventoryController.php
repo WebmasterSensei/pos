@@ -2,66 +2,65 @@
 
 namespace App\Http\Controllers;
 
+use App\Category;
+use App\Product;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    private function getProducts(): array
+    private function getProducts()
     {
-        $path = storage_path('app/products.json');
-        if (!file_exists($path)) return [];
-        return json_decode(file_get_contents($path), true) ?? [];
+        $path = Product::join('categories', 'categories.id', 'products.category')->paginate(10);
+        return $path;
+    }
+    private function getProductForSearch()
+    {
+        $path = Product::get();
+        return $path;
     }
 
-    private function saveProducts(array $products): void
+    private function getCategories()
     {
-        file_put_contents(storage_path('app/products.json'), json_encode($products, JSON_PRETTY_PRINT));
+        return Category::all();
     }
+
 
     public function index()
     {
         $products = $this->getProducts();
-        $categories = array_unique(array_column($products, 'category'));
-        sort($categories);
+        $categories = $this->getCategories();
 
-        $total = count($products);
+        $total = $this->getProductForSearch()->count();
 
-        $low = count(array_filter($products, function ($p) {
-            return $p['stock'] > 0 && $p['stock'] <= 5;
-        }));
+        $low = $products->filter(function ($p) {
+            return $p->stock > 0 && $p->stock <= 5;
+        })->count();
 
-        $out = count(array_filter($products, function ($p) {
-            return $p['stock'] <= 0;
-        }));
+        $out = $products->filter(function ($p) {
+            return $p->stock <= 0;
+        })->count();
 
-
-        return view('inventory.index', compact('products', 'categories','total', 'low', 'out'));
+        return view('inventory.index', compact('products', 'categories', 'total', 'low', 'out'));
     }
 
     public function store(Request $request)
     {
-        $products = $this->getProducts();
+        $products = $this->getProductForSearch();
 
-        $product = [
-            'id'       => $request->id ?? (string)(time()),
-            'name'     => $request->name,
-            'price'    => (float)$request->price,
-            'cost'     => (float)($request->cost ?? 0),
-            'stock'    => (int)$request->stock,
-            'category' => $request->category ?? 'General',
-            'barcode'  => $request->barcode,
-            'emoji'    => $request->emoji ?? '📦',
-        ];
-
-        // Check for duplicate barcode
         foreach ($products as $p) {
-            if ($p['barcode'] === $product['barcode']) {
+            if ($p->barcode === $request->barcode) {
                 return response()->json(['error' => 'Barcode already exists'], 422);
             }
         }
-
-        $products[] = $product;
-        $this->saveProducts($products);
+        $product = Product::create([
+            'product_name'     => $request->name,
+            'price'    => (float)$request->price,
+            'cost'     => (float)($request->cost ?? 0),
+            'stock'    => (int)$request->stock,
+            'category' => $request->category_id ?? 'General',
+            'barcode'  => $request->barcode,
+            'images'    => $request->image ?? '📦',
+        ]);
 
         return response()->json(['success' => true, 'product' => $product]);
     }

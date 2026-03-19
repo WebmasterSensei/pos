@@ -394,7 +394,7 @@
 
             localStorage.setItem('cart', JSON.stringify(cart)); // save empty cart
             localStorage.removeItem('discount');
-            // document.getElementById('cashInput').value = '';
+            document.getElementById('cashInput').value = 0;
             updateTotals();
             renderCart();
         }
@@ -420,7 +420,6 @@
                 updateTotals();
                 return;
             }
-
             // empty.style.display = 'none';
             if (Array.isArray(cart) && cart.length > 0) {
                 container.innerHTML = cart.map(item => `
@@ -523,9 +522,9 @@
         }
 
         function closeReceipt() {
-            const modal = document.getElementById('receiptModal'); // force hide
+            const modal = document.getElementById('receiptModal').classList.remove('open'); // force hide
             clearCart();
-            document.getElementById('cashInput').value = '';
+            document.getElementById('cashInput').value = 0;
             barcodeInput.focus();
         }
 

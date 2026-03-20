@@ -25,37 +25,51 @@
 
             <!-- Category Pills -->
             <div class="category-pills" id="categoryPills">
-                <button class="pill active" data-category="all" onclick="filterCategory(this, 'all')">All Items</button>
+                <button class="pill {{ request('category') == null || request('category') == 'all' ? 'active' : '' }}"
+                    data-category="all" onclick="filterCategory(this, 'all')">All Items</button>
+
                 @foreach ($categories as $cat)
-                    <button class="pill" data-category="{{ $cat->category_name }}"
-                        onclick="filterCategory(this, '{{ $cat->id }}')">{{ $cat->category_name }}</button>
+                    <button class="pill {{ request('category') == $cat->id ? 'active' : '' }}"
+                        data-category="{{ $cat->category_name }}" onclick="filterCategory(this, '{{ $cat->id }}')">
+                        {{ $cat->category_name }}
+                    </button>
                 @endforeach
             </div>
 
             <!-- Product Search -->
             <div class="product-search-bar">
                 <input type="text" id="productSearch" class="form-control" placeholder="Search products by name..."
-                    oninput="filterProducts(this.value)" style="flex:1">
+                    onkeypress="if(event.key === 'Enter'){ filterProducts(this.value); }" style="flex:1">
             </div>
 
             <!-- Product Grid -->
             <div class="product-container">
-                @forelse ($products as $item)
-                    <div class="product-card">
-                        <img src="{{ $item->images }}" alt="Product">
-                        <div class="product-name">{{ $item->product_name }}</div>
-                        <div class="product-price">₱20</div>
-                        <button class="addtocart" onclick='selectProduct(@json($item))'>Add to Cart</button>
-                    </div>
+                <div class="productsContainer">
+                    @forelse ($products as $item)
+                        <div class="product-card">
+                            <span style="font-size: 50px">{{ $item->images }}</span>
+                            <div class="product-name">{{ $item->product_name }}</div>
+                            <div class="product-price">₱20</div>
+                            <button class="addtocart" onclick='selectProduct(@json($item))'>Add to
+                                Cart</button>
+                        </div>
 
-                @empty
-                    <div class="product-card">
-                        <p>
+                    @empty
+
+                        <p
+                            style="  text-align: center;
+    font-size: 18px;
+    color: #888888;
+    padding: 40px 20px;
+    border: 2px dashed #cccccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    width: 100%;
+    box-sizing: border-box;     ">
                             This is empty
                         </p>
-                    </div>
-                @endforelse
-
+                    @endforelse
+                </div>
             </div>
 
             <div style="margin-top: 20px; display: flex; justify-content: end; gap: 8px; font-family: Arial, sans-serif;">
@@ -164,7 +178,7 @@
                     <div class="cash-input-row">
                         <div class="cash-prefix">₱</div>
                         <input type="number" id="cashInput" class="cash-input" placeholder="0.00" step="0.01"
-                            oninput="calcChange()">
+                            oninput="this.value = this.value.replace(/[^0-9.]/g, ''); calcChange()">
                     </div>
                     <div class="change-display">
                         <span class="change-label">Change</span>
@@ -252,7 +266,9 @@
             type: 'percent',
             val: 0
         };
+
         const TAX_RATE = 0.12;
+
         let scanBuffer = '';
         let scanTimer = null;
 
@@ -312,23 +328,29 @@
                 });
         }
         // ===== PRODUCT FILTER =====
-        function filterCategory(el, cat) {
-            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-            el.classList.add('active');
-            const cards = document.querySelectorAll('.product-card');
-            cards.forEach(c => {
-                const show = cat === 'all' || c.dataset.category === cat;
-                c.style.display = show ? '' : 'none';
+        function filterCategory(el, catId) {
+            // Remove 'active' class from all buttons
+            document.querySelectorAll('#categoryPills .pill').forEach(btn => {
+                btn.classList.remove('active');
             });
+
+            // Add 'active' class to the clicked button
+            el.classList.add('active');
+
+            // Redirect or filter products
+            let url = '/home';
+            if (catId && catId !== 'all') {
+                url += `?category=${catId}`;
+            }
+            window.location.href = url;
         }
 
         function filterProducts(query) {
-            const q = query.toLowerCase();
-            document.querySelectorAll('.product-card').forEach(c => {
-                const match = c.dataset.name.toLowerCase().includes(q) ||
-                    c.dataset.barcode.toLowerCase().includes(q);
-                c.style.display = match ? '' : 'none';
-            });
+            let url = '/home';
+            if (query) {
+                url += `?query=${query}`;
+            }
+            window.location.href = url;
         }
 
         // ===== CART LOGIC =====
@@ -458,7 +480,7 @@
             if (Array.isArray(cart) && cart.length > 0) {
                 container.innerHTML = cart.map(item => `
         <div class="cart-item" id="cart-${item.id}">
-            <img src="${item.image || '/storage/products/productsimage.png'}" style="height: 20px; width: 20px;" alt="${item.name}">
+              <span>${item.image}</span>
             <div class="cart-item-info">
                 <div class="cart-item-name">${item.name}</div>
                <div class="cart-item-price">₱${item.price.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
@@ -504,6 +526,7 @@
         }
 
         function calcChange() {
+
             const total = parseFloat(document.getElementById('grandTotal').textContent.replace('₱', '')) || 0;
             const cash = parseFloat(document.getElementById('cashInput').value) || 0;
             const change = Math.max(0, cash - total);

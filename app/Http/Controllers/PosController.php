@@ -9,16 +9,18 @@ use Illuminate\Http\Request;
 
 class PosController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = $this->getProducts();
+        $categoryId = $request->input('category');
+        $query = $request->input('query');
+        $products = $this->getProducts($categoryId, $query);
 
         $categories = $this->getCategories();
 
         return view('pos.index', compact('products', 'categories'));
     }
 
-      public function checkout(Request $request)
+    public function checkout(Request $request)
     {
         $data = $request->validate([
             'items'   => 'required|array',
@@ -83,9 +85,20 @@ class PosController extends Controller
     }
 
     // ===== Helpers =====
-    private function getProducts()
+    private function getProducts($cat_id, $query)
     {
-        $path = Product::join('categories', 'categories.id', 'products.category')->paginate(12);
+        // dd($cat_id);
+        $path = Product::join('categories', 'categories.id', 'products.category')
+            ->when(isset($cat_id), function ($q) use ($cat_id) {
+                $q->where('categories.id', $cat_id);
+            })
+            ->when(isset($query), function ($q) use ($query) {
+                $q->where(function ($sub) use ($query) {
+                    $sub->where('products.product_name', 'like', "%{$query}%")
+                        ->orWhere('products.barcode', 'like', "%{$query}%");
+                });
+            })
+            ->paginate(12);
         return $path;
     }
 

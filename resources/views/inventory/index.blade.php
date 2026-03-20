@@ -71,6 +71,7 @@
                                 <th>Item</th>
                                 <th>Barcode</th>
                                 <th>Category</th>
+                                <th>Product Name</th>
                                 <th>Price</th>
                                 <th>Cost</th>
                                 <th>Stock</th>
@@ -84,8 +85,7 @@
                                     <td>
                                         <div style="display:flex;align-items:center;gap:12px;">
                                             <div class="item-thumb">
-                                                <img style="height: 20px; width:20px" src="{{ $product['images'] }}"
-                                                    alt="">
+                                                <span>{{ $product->images }}</span>
                                             </div>
                                             <div>
                                                 <div
@@ -99,6 +99,7 @@
                                     </td>
                                     <td><span class="barcode-display">{{ $product['barcode'] }}</span></td>
                                     <td><span class="badge badge-blue">{{ $product['category_name'] }}</span></td>
+                                    <td><span class="badge badge-blue">{{ $product['product_name'] }}</span></td>
                                     <td style="font-family:var(--font-mono);color:var(--accent)">
                                         ₱{{ number_format($product['price'], 2) }}</td>
                                     <td style="font-family:var(--font-mono);color:var(--text-secondary)">
@@ -210,38 +211,45 @@
                         <div class="form-group">
                             <label class="form-label">Selling Price *</label>
                             <input type="number" class="form-control" id="fPrice" placeholder="0.00" step="0.01"
-                                min="0" required>
+                                min="0" required oninput="this.value = this.value.replace(/[^0-9.]/g, '')">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Cost Price</label>
                             <input type="number" class="form-control" id="fCost" placeholder="0.00" step="0.01"
-                                min="0">
+                                min="0" oninput="this.value = this.value.replace(/[^0-9.]/g, '')">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Stock Quantity *</label>
                         <input type="number" class="form-control" id="fStock" placeholder="0" min="0"
-                            required>
+                            required oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Category</label>
-                        <input type="text" class="form-control" id="fCategory" placeholder="e.g. Beverages"
-                            list="categoryList">
 
-                        <datalist id="categoryList">
+                        <select class="form-control" id="fCategoryId" name="category_id">
+                            <option value="">Select Categories</option>
                             @foreach ($categories as $cat)
-                                <input type="hidden" id="fCategoryId" name="category_id" value="{{ $cat->id }}">
-                                <option data-id="{{ $cat->id }}" value="{{ $cat->category_name }}"></option>
+                                <option value="{{ $cat->id }}">{{ $cat->category_name }}</option>
                             @endforeach
-                        </datalist>
+                        </select>
+
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">Emoji (windows + dot)</label>
+
+                        <input type="text" class="form-control" id="fEmoji" required>
+
+                    </div>
+
 
                     <div class="form-group">
                         <label class="form-label">Barcode / SKU *</label>
                         <div style="display:flex;gap:8px;">
                             <input type="text" class="form-control" id="fBarcode"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                 placeholder="Scan or enter barcode" required style="font-family:var(--font-mono)">
                             <button type="button" class="btn btn-secondary btn-sm" onclick="generateBarcode()"
                                 title="Generate">⊞</button>
@@ -320,7 +328,7 @@
         function resetForm() {
             document.getElementById('itemForm').reset();
             document.getElementById('itemId').value = '';
-            document.getElementById('fEmoji').value = '📦';
+            document.getElementById('fEmoji').value = '';
             document.getElementById('formTitle').textContent = 'Add New Item';
             document.getElementById('submitBtn').textContent = 'Save Item';
             editingId = null;
@@ -334,27 +342,38 @@
 
         function openEditModal(product) {
             editingId = product.id;
-            document.getElementById('itemId').value = product.id;
-            document.getElementById('fName').value = product.product_name;
-            document.getElementById('fPrice').value = product.price;
-            document.getElementById('fCost').value = product.cost;
-            document.getElementById('fStock').value = product.stock;
-            document.getElementById('category_id').value = product.category;
-            document.getElementById('fBarcode').value = product.barcode;
-            document.getElementById('fEmoji').value = product.emoji;
-            document.getElementById('formTitle').textContent = 'Edit Item';
-            document.getElementById('submitBtn').textContent = 'Update Item';
-            document.getElementById('fName').focus();
+
+            const itemId = document.getElementById('itemId');
+            const fName = document.getElementById('fName');
+            const fPrice = document.getElementById('fPrice');
+            const fCost = document.getElementById('fCost');
+            const fStock = document.getElementById('fStock');
+            const category = document.getElementById('fCategoryId');
+            const fBarcode = document.getElementById('fBarcode');
+            const formTitle = document.getElementById('formTitle');
+            const submitBtn = document.getElementById('submitBtn');
+
+            if (itemId) itemId.value = product.id;
+            if (fName) fName.value = product.product_name;
+            if (fPrice) fPrice.value = product.price;
+            if (fCost) fCost.value = product.cost;
+            if (fStock) fStock.value = product.stock;
+            if (category) category.value = product.category;
+            if (fBarcode) fBarcode.value = product.barcode;
+            if (formTitle) formTitle.textContent = 'Edit Item';
+            if (submitBtn) submitBtn.textContent = 'Update Item';
+            if (fName) fName.focus();
+
             window.scrollTo(0, 0);
         }
 
-        function selectEmoji(emoji) {
-            document.getElementById('fEmoji').value = emoji;
-            document.querySelectorAll('.emoji-opt').forEach(b => {
-                b.style.borderColor = b.textContent === emoji ? 'var(--accent)' : 'var(--border)';
-                b.style.background = b.textContent === emoji ? 'var(--accent-dim)' : 'var(--bg-raised)';
-            });
-        }
+        // function selectEmoji(emoji) {
+        //     document.getElementById('fEmoji').value = emoji;
+        //     document.querySelectorAll('.emoji-opt').forEach(b => {
+        //         b.style.borderColor = b.textContent === emoji ? 'var(--accent)' : 'var(--border)';
+        //         b.style.background = b.textContent === emoji ? 'var(--accent-dim)' : 'var(--bg-raised)';
+        //     });
+        // }
 
         function generateBarcodeVal() {
             return Math.floor(Math.random() * 9000000000000 + 1000000000000).toString();
@@ -363,7 +382,31 @@
         function generateBarcode() {
             document.getElementById('fBarcode').value = generateBarcodeVal();
         }
+        // Define clearInputs globally
+        function clearInputs() {
+            const fName = document.getElementById('fName');
+            const fPrice = document.getElementById('fPrice');
+            const fCost = document.getElementById('fCost');
+            const fStock = document.getElementById('fStock');
+            const fCategoryId = document.getElementById('fCategoryId'); // correct ID
+            const fBarcode = document.getElementById('fBarcode');
+            const fEmoji = document.getElementById('fEmoji');
+            const itemId = document.getElementById('itemId');
 
+            if (fName) fName.value = '';
+            if (fPrice) fPrice.value = '';
+            if (fCost) fCost.value = '';
+            if (fStock) fStock.value = '';
+            if (fCategoryId) fCategoryId.value = '';
+            if (fEmoji) fEmoji.value = '';
+            if (fBarcode) fBarcode.value = '';
+            if (itemId) itemId.value = '';
+
+            // Reset editingId so next save is treated as "new"
+            editingId = null;
+        }
+
+        // Your saveItem function remains the same
         function saveItem(e) {
             e.preventDefault();
             const data = {
@@ -372,47 +415,43 @@
                 price: parseFloat(document.getElementById('fPrice').value),
                 cost: parseFloat(document.getElementById('fCost').value) || 0,
                 stock: parseInt(document.getElementById('fStock').value),
-                category_id: document.getElementById('fCategoryId').value || null, // use hidden input
+                category_id: document.getElementById('fCategoryId').value || null,
                 barcode: document.getElementById('fBarcode').value,
-                image: '📦',
+                image: document.getElementById('fEmoji').value || '📦',
                 _token: document.querySelector('meta[name="csrf-token"]').content
             };
 
-            const url = editingId ?
-                `/inventory/${editingId}` :
-                '/inventory';
-
+            const url = editingId ? `/inventory/${editingId}` : '/inventory';
             const method = editingId ? 'PUT' : 'POST';
 
             fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': data._token
-                },
-                body: JSON.stringify(data)
-            }).then(r => r.json()).then(res => {
-                showToast(`✓ Item ${editingId ? 'updated' : 'added'} successfully`, 'success');
-                setTimeout(() => location.reload(), 800);
-                // clearInputs()
-            }).catch(() => {
-                // Demo: reload with success message
-                showToast(`✓ Item ${editingId ? 'updated' : 'saved'}!`, 'success');
-                setTimeout(() => location.reload(), 800);
-            });
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': data._token
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        showToast(`✓ Item ${editingId ? 'updated' : 'added'} successfully`, 'success');
+                        clearInputs();
+                        setTimeout(() => location.reload(), 800);
+                    } else if (res.error) {
+                        showToast(`Barcode already exists`, 'error');
+                        clearInputs();
+                    }
+                })
+                .catch(() => {});
         }
 
-        // function clearInputs() {
-        //     document.getElementById('fName').value = '';
-        //     document.getElementById('fPrice').value = '';
-        //     document.getElementById('fCost').value = '';
-        //     document.getElementById('fStock').value = '';
-        //     document.getElementById('fCategory').value = '';
-        //     document.getElementById('fCategoryId').value = ''; // hidden input for category ID
-        //     document.getElementById('fBarcode').value = '';
-        //     document.getElementById('fEmoji')?.value = '📦'; // optional default
-        //     document.getElementById('itemId').value = ''; // if editingId is stored here
-        // }
+        // Ensure this runs after DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('yourFormId'); // replace with your form ID
+            if (form) form.addEventListener('submit', saveItem);
+        });
+
 
         // ===== DELETE =====
         function deleteItem(id) {

@@ -10,7 +10,7 @@ class InventoryController extends Controller
 {
     private function getProducts()
     {
-        $path = Product::join('categories', 'categories.id', 'products.category')->paginate(10);
+        $path = Product::join('categories', 'categories.id', 'products.category')->orderByDesc('products.created_at')->paginate(10);
         return $path;
     }
     private function getProductForSearch()
@@ -49,7 +49,7 @@ class InventoryController extends Controller
 
         foreach ($products as $p) {
             if ($p->barcode === $request->barcode) {
-                return response()->json(['error' => 'Barcode already exists'], 422);
+                 return response()->json(['error' => true, '' => $p]);
             }
         }
         $product = Product::create([
@@ -67,22 +67,24 @@ class InventoryController extends Controller
 
     public function update(Request $request, string $id)
     {
-        $products = $this->getProducts();
+        // Find the product by ID
+        $product = Product::find($id);
 
-        foreach ($products as &$product) {
-            if ($product['id'] == $id) {
-                $product['name']     = $request->name ?? $product['name'];
-                $product['price']    = (float)($request->price ?? $product['price']);
-                $product['cost']     = (float)($request->cost ?? $product['cost']);
-                $product['stock']    = (int)($request->stock ?? $product['stock']);
-                $product['category'] = $request->category ?? $product['category'];
-                $product['barcode']  = $request->barcode ?? $product['barcode'];
-                $product['emoji']    = $request->emoji ?? $product['emoji'];
-                break;
-            }
+        if (!$product) {
+            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
         }
 
-        $this->saveProducts($products);
+        // Update the product
+        $product->update([
+            'product_name' => $request->name,
+            'price'        => (float)$request->price,
+            'cost'         => (float)($request->cost ?? 0),
+            'stock'        => (int)$request->stock,
+            'category'     => $request->category_id,
+            'barcode'      => $request->barcode,
+            'images'       => $request->image ?? '📦',
+        ]);
+
         return response()->json(['success' => true]);
     }
 

@@ -85,7 +85,7 @@ class PosController extends Controller
     // ===== Helpers =====
     private function getProducts()
     {
-        $path = Product::join('categories', 'categories.id', 'products.id')->take(10)->get();
+        $path = Product::join('categories', 'categories.id', 'products.category')->paginate(12);
         return $path;
     }
 

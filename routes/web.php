@@ -18,14 +18,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('pos/index');
+    return view('auth/login');
 });
 
 Auth::routes();
 
-Route::get('/home', 'HomeController@index')->name('home');
+// Route::get('/home', 'HomeController@index')->name('home');
 
-Route::get('/', [PosController::class, 'index'])->name('pos.index');
+Route::get('/home', [PosController::class, 'index'])->name('pos.index');
 Route::post('/scanning-barcode', [PosController::class, 'scanningBarcode'])->name('scanningBarcode');
 Route::post('/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
 

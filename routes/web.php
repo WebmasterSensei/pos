@@ -38,3 +38,4 @@ Route::post('/inventory/{id}/restock', [InventoryController::class, 'restock'])-
 
 // Transactions
 Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+Route::get('/excel-downloads', [TransactionController::class, 'downloadExcel'])->name('transactions.downloadExcel');

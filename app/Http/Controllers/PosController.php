@@ -51,12 +51,15 @@ class PosController extends Controller
         $taxable = $subtotal - $discountVal;
 
         $tax = $taxable * 0.12;
+
         $itemIds = collect($data['items'])->pluck('id')->toArray();
+        $qtyIds = collect($data['items'])->pluck('qty')->toArray();
 
 
         $transaction = Checkout::create([
             'tr_no'       => $tr_no + 1,
             'items'      =>  $itemIds,
+            'qty'      =>  $qtyIds,
             'item_count' => collect($data['items'])->sum('qty'),
             'subtotal'   => $subtotal,
             'discount'   => $discountVal,

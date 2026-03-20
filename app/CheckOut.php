@@ -11,5 +11,6 @@ class CheckOut extends Model
 
     protected $casts = [
         'items' => 'array', // cast the 'items' column to an array
+        'qty' => 'array', // cast the 'items' column to an array
     ];
 }

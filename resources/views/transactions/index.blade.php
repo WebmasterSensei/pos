@@ -11,7 +11,8 @@
                 <div class="page-subtitle">SALES · HISTORY · REPORTS</div>
             </div>
             <div style="display:flex;gap:10px;">
-                <input type="date" class="form-control" style="width:160px" id="dateFilter" onchange="filterDate()">
+                <input type="date" class="form-control" style="width:160px" id="dateFilter" value="{{ request('date') }}"
+                    onchange="filterDate()">
                 <button class="btn btn-secondary" onclick="exportCSV()">↓ Export CSV</button>
             </div>
         </div>
@@ -148,35 +149,56 @@
                             cursor: not-allowed;
                         }
                     </style>
-                    {{ $transactions->links() }}
+                    {{ $transactions->appends(request()->query())->links() }}
                 </div>
             </div>
         </div>
     </div>
+    <div class="toast-container" id="toastContainer"></div>
 @endsection
 
 @push('scripts')
     <script>
         function filterDate() {
             const date = document.getElementById('dateFilter').value;
-            document.querySelectorAll('#txTable tbody tr[data-date]').forEach(row => {
-                row.style.display = !date || row.dataset.date === date ? '' : 'none';
-            });
+
+            // Redirect or filter products
+            let url = '/transactions';
+            if (date) {
+                url += `?date=${date}`;
+            }
+            window.location.href = url;
         }
 
         function exportCSV() {
-            const rows = [
-                ['ID', 'Date', 'Items', 'Subtotal', 'Discount', 'Tax', 'Total', 'Cash', 'Change']
-            ];
-            document.querySelectorAll('#txTable tbody tr').forEach(row => {
-                const cells = [...row.querySelectorAll('td')].map(td => td.textContent.trim());
-                rows.push(cells.slice(0, 9));
-            });
-            const csv = rows.map(r => r.join(',')).join('\n');
-            const a = document.createElement('a');
-            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-            a.download = `transactions_${new Date().toISOString().slice(0,10)}.csv`;
-            a.click();
+            const date = document.getElementById('dateFilter').value;
+
+            if (!date) {
+                return showToast('Oops! Please add a date', 'error');
+            } else {
+                const params = new URLSearchParams({
+                    date
+                });
+                const url = `/excel-downloads?${params.toString()}`;
+                window.location.href = url;
+            }
+
+
+        }
+
+        function showToast(msg, type = 'success') {
+            const c = document.getElementById('toastContainer');
+            const t = document.createElement('div');
+            t.className = `toast ${type}`;
+            t.innerHTML =
+                `<span class="toast-icon">${type === 'success' ? '✓' : '✕'}</span><span class="toast-msg">${msg}</span>`;
+            c.appendChild(t);
+            setTimeout(() => {
+                t.style.opacity = '0';
+                t.style.transform = 'translateX(100%)';
+                t.style.transition = '0.3s';
+                setTimeout(() => t.remove(), 300);
+            }, 2500);
         }
     </script>
 @endpush

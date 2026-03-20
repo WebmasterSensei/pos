@@ -8,9 +8,16 @@ use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    private function getProducts()
+    private function getProducts($query, $cat)
     {
         $path = Product::select('products.id as id', 'products.*', 'categories.id as cat_id', 'categories.category_name')
+            ->when(isset($cat), function ($q) use ($cat) {
+                $q->where('products.category', 'like', "%{$cat}%");
+            })
+            ->when(isset($query), function ($q) use ($query) {
+                $q->where('products.product_name', 'like', "%{$query}%")
+                    ->orWhere('products.barcode', 'like', "%{$query}%");
+            })
             ->join('categories', 'categories.id', 'products.category')
             ->orderByDesc('products.created_at')->paginate(10);
         return $path;
@@ -27,9 +34,12 @@ class InventoryController extends Controller
     }
 
 
-    public function index()
+    public function index(Request $request)
     {
-        $products = $this->getProducts();
+        $query = $request->input('query');
+        $cat = $request->input('category');
+
+        $products = $this->getProducts($query, $cat);
         $categories = $this->getCategories();
 
         $total = $this->getProductForSearch()->count();

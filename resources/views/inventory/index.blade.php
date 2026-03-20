@@ -51,11 +51,11 @@
                             style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px;">⌗</span>
                         <input type="text" id="invBarcodeSearch" class="form-control"
                             placeholder="Scan barcode or search name, SKU..."
-                            style="padding-left:38px;font-family:var(--font-mono);" oninput="filterInventory(this.value)"
+                            style="padding-left:38px;font-family:var(--font-mono);" value="{{request('query')}}" oninput="filterInventory(this.value)"
                             autofocus>
                     </div>
                     <select class="form-control" style="width:160px"
-                        onchange="filterInventory(document.getElementById('invBarcodeSearch').value)">
+                        onchange="filterInventoryCategory(this.value)">
                         <option value="">All Categories</option>
                         @foreach ($categories as $cat)
                             <option value="{{ $cat->id }}">{{ $cat->category_name }}</option>
@@ -126,7 +126,7 @@
                                                 onclick='openEditModal({{ json_encode($product) }})'
                                                 title="Edit">🖍</button>
                                             <button class="btn btn-secondary btn-sm btn-icon"
-                                                onclick="restockItem('{{ $product['id'] }}', '{{ $product['name'] }}', {{$product['stock']}})"
+                                                onclick="restockItem('{{ $product['id'] }}', '{{ $product['name'] }}', {{ $product['stock'] }})"
                                                 title="Restock">+</button>
                                             <button class="btn btn-danger btn-sm btn-icon"
                                                 onclick="deleteItem('{{ $product['id'] }}')" title="Delete">✕</button>
@@ -315,13 +315,19 @@
         // ===== FILTER =====
         function filterInventory(query) {
             const q = query.toLowerCase();
-            const catSel = document.querySelector('select').value;
-            document.querySelectorAll('#inventoryBody tr[data-id]').forEach(row => {
-                const nameMatch = row.dataset.name.includes(q);
-                const barcodeMatch = row.dataset.barcode.includes(q);
-                const catMatch = !catSel || row.dataset.category === catSel;
-                row.style.display = (nameMatch || barcodeMatch) && catMatch ? '' : 'none';
-            });
+            let url = '/inventory';
+            if (q) {
+                url += `?query=${q}`;
+            }
+            window.location.href = url;
+        }
+        function filterInventoryCategory(query) {
+            const q = query.toLowerCase();
+            let url = '/inventory';
+            if (q) {
+                url += `?category=${q}`;
+            }
+            window.location.href = url;
         }
 
         // ===== FORM =====

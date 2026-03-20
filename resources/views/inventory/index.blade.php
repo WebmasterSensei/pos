@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Inventory — NEXUS POS')
+@section('title', 'Inventory — NEXDEV POS')
 
 @section('content')
     <div class="inventory-layout">
@@ -126,7 +126,7 @@
                                                 onclick='openEditModal({{ json_encode($product) }})'
                                                 title="Edit">🖍</button>
                                             <button class="btn btn-secondary btn-sm btn-icon"
-                                                onclick="restockItem('{{ $product['id'] }}', '{{ $product['name'] }}')"
+                                                onclick="restockItem('{{ $product['id'] }}', '{{ $product['name'] }}', {{$product['stock']}})"
                                                 title="Restock">+</button>
                                             <button class="btn btn-danger btn-sm btn-icon"
                                                 onclick="deleteItem('{{ $product['id'] }}')" title="Delete">✕</button>
@@ -455,7 +455,9 @@
 
         // ===== DELETE =====
         function deleteItem(id) {
+
             if (!confirm('Delete this item from inventory?')) return;
+
             fetch(`/inventory/${id}`, {
                 method: 'DELETE',
                 headers: {
@@ -471,7 +473,7 @@
         }
 
         // ===== RESTOCK =====
-        function restockItem(id, name) {
+        function restockItem(id, name, stock) {
             currentRestockId = id;
             document.getElementById('restockItemName').textContent = name;
             document.getElementById('restockQty').value = 10;
@@ -501,7 +503,7 @@
             }).then(() => {
                 showToast(`✓ Restocked +${qty} units`, 'success');
                 closeRestock();
-                setTimeout(() => location.reload(), 600);
+                // setTimeout(() => location.reload(), 600);
             }).catch(() => {
                 showToast(`✓ Added ${qty} units`, 'success');
                 closeRestock();

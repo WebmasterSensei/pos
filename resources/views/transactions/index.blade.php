@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Transactions — NEXUS POS')
+@section('title', 'Transactions — NEXTDEV POS')
 
 @section('content')
     <div style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">

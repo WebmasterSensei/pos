@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Register — NEXUS POS')
+@section('title', 'Register — NEXTDEV POS')
 
 @section('content')
     <div class="pos-layout">
@@ -200,7 +200,7 @@
                     <div style="font-size:36px;margin-bottom:8px;">✓</div>
                     <div class="modal-title" style="text-align:center;color:var(--green)">Payment Successful</div>
                     <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:0.1em">
-                        NEXUS
+                        NEXTDEV
                         POS · RECEIPT</div>
                 </div>
                 <hr class="receipt-divider">

@@ -88,7 +88,7 @@ class PosController extends Controller
     private function getProducts($cat_id, $query)
     {
         // dd($cat_id);
-        $path = Product::join('categories', 'categories.id', 'products.category')
+        $path = Product::select('products.id as id', 'products.*', 'categories.id as cat_id', 'categories.category_name')->join('categories', 'categories.id', 'products.category')
             ->when(isset($cat_id), function ($q) use ($cat_id) {
                 $q->where('categories.id', $cat_id);
             })

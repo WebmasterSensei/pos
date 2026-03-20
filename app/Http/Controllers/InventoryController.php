@@ -10,7 +10,9 @@ class InventoryController extends Controller
 {
     private function getProducts()
     {
-        $path = Product::join('categories', 'categories.id', 'products.category')->orderByDesc('products.created_at')->paginate(10);
+        $path = Product::select('products.id as id', 'products.*', 'categories.id as cat_id', 'categories.category_name')
+            ->join('categories', 'categories.id', 'products.category')
+            ->orderByDesc('products.created_at')->paginate(10);
         return $path;
     }
     private function getProductForSearch()
@@ -49,7 +51,7 @@ class InventoryController extends Controller
 
         foreach ($products as $p) {
             if ($p->barcode === $request->barcode) {
-                 return response()->json(['error' => true, '' => $p]);
+                return response()->json(['error' => true, '' => $p]);
             }
         }
         $product = Product::create([
@@ -90,27 +92,25 @@ class InventoryController extends Controller
 
     public function destroy(string $id)
     {
-        $products = $this->getProducts();
-        $products = array_values(array_filter($products, function ($p) use ($id) {
-            return $p['id'] != $id;
-        }));
-        $this->saveProducts($products);
+        $restock = Product::findOrFail($id);
+
+        if ($restock) {
+            $restock->delete();
+        }
         return response()->json(['success' => true]);
     }
 
     public function restock(Request $request, string $id)
     {
         $qty = (int)($request->qty ?? 0);
-        $products = $this->getProducts();
+        $restock = Product::findOrFail($id);
 
-        foreach ($products as &$product) {
-            if ($product['id'] == $id) {
-                $product['stock'] += $qty;
-                break;
-            }
+        if ($restock) {
+            $restock->stock += $qty;
+
+            $restock->save();
         }
 
-        $this->saveProducts($products);
         return response()->json(['success' => true]);
     }
 }

@@ -391,7 +391,9 @@
         }
 
         function changeQty(id, delta) {
-            const item = cart.find(i => i.id === id);
+
+            
+            const item = cart.find(i => i.id == id);
             if (!item) return;
 
             const newQty = item.qty + delta;
